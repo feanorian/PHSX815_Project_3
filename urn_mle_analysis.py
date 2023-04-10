@@ -1,3 +1,11 @@
+"""
+Name: Craig Brooks
+PHSX 815 Spring 2023
+Project # 13
+Due Date 4/10/2023
+This script will determine the maximum likelihood estimate (MLE) for p = the probability of drawing a White/Black marble, determine the confidence interval and uncertainty,
+then plot the empirical histogram and best fit, 
+"""
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
