@@ -4,7 +4,7 @@ PHSX 815 Spring 2023
 Project # 13
 Due Date 4/10/2023
 This code generates samples from 3 urns with White and Black marbles where the user defines the number sample for each trial and the number of trials. 
-This data is written to a file and which another script, 'urn_mle_ana;ysis' will determine the maximum likelihood estimate (MLE) for p = the probability 
+This data is written to a file and which another script, 'urn_mle_analysis' will determine the maximum likelihood estimate (MLE) for p = the probability 
 of drawing a White/Black marble
 """
 
