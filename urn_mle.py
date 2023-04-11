@@ -20,6 +20,7 @@ import random
 
 if __name__ == "__main__":
 
+
 	if '-h' in sys.argv or '--help' in sys.argv:
 		print ("Usage: %s [-t -n]" % sys.argv[0])
 		print
@@ -34,7 +35,7 @@ if __name__ == "__main__":
 		N_marbles_sample = int(sys.argv[p+1])
 	else:
 		N_marbles_sample = 100
-
+	
 
 	np.random.seed(677)
 
@@ -55,10 +56,20 @@ if __name__ == "__main__":
 	# outcomes of each urn as ints
 	outcomes_int = []
 	
-	
-	# Urns generated with different ratios
-	urns = np.random.dirichlet(alpha, n_urns)
 
+	# Urns generated with different ratios
+	InputFile = 'urn_data_mle_frac.csv'
+	haveUrns = True
+	if haveUrns == True:
+		with open(InputFile) as file:
+			means = pd.read_csv(file,usecols=[1,2,3])
+			#print(means)
+		means1 = means['Urn 1'].values.tolist()
+		means2 = means['Urn 2'].values.tolist()
+		means3 = means['Urn 3'].values.tolist()
+		urns = [means1, means2, means3]
+	else:
+		urns = np.random.dirichlet(alpha, n_urns)
 	
 	# Function that constructs an urn  passing the number of trials and probability array for the urn. 
 	def Category(trials, prob):
@@ -120,7 +131,7 @@ if __name__ == "__main__":
 	outcomes_int = []
 	
 	
-	
+	print(urns)
 	# constructs an urn  passing the number of rolls and the probability. Here, the number of marbles is set to N = 100000
 	for urn in urns:
 		occurences = Category(N_marbles_urn, urn)[0]
@@ -160,28 +171,29 @@ if __name__ == "__main__":
 		'Urn3B': urn3_Black}
 	
 	urn_df = pd.DataFrame(urns_dic)
-	urn_df.to_csv('urn_data_mle.csv')
-
-	urns_frac_dic = {'Urn 1':urns[0], 'Urn 2':urns[1], 'Urn 3': urns[2]}
-	urns_frac_df = pd.DataFrame(urns_frac_dic)
-	urns_frac_df.to_csv('urn_data_mle_frac.csv')
+	urn_df.to_csv(f'urn_data_mle_{trials}.csv')
+	if haveUrns == False:
+		urns_frac_dic = {'Urn 1':urns[0], 'Urn 2':urns[1], 'Urn 3': urns[2]}
+		urns_frac_df = pd.DataFrame(urns_frac_dic)
+		urns_frac_df.to_csv('urn_data_mle_frac.csv')
 
 	# plots histograms for every urn. Uncomment plt.savefig() to save image
 	sns.histplot(urn1_White, element="step",fill = True, color = 'salmon', bins='auto', label='Urn 1')
 	sns.histplot(urn2_White, element="step",fill = True, color = 'violet', bins='auto', label='Urn 2', alpha = .25)
 	sns.histplot(urn3_White, element="step",fill = True, color = 'aqua', bins='auto', label='Urn 3')
 	plt.legend(loc='center')
-	plt.title(f'white/total per urn for {len(urn1_White)} trials per urn')	
+	plt.title(f'white/total per urn for {len(urn1_White)} trials per urn')  
 	plt.xlabel('White/Total')
+	#plt.savefig(f'white_urns{trials}', dpi= 700)
 	plt.show()
-	#plt.savefig('white_urns', dpi= 700)
+	
 
 	sns.histplot(urn1_Black, element="step",fill = True, color = 'salmon', bins='auto', label='Urn 1')
 	sns.histplot(urn2_Black, element="step",fill = True, color = 'violet', bins='auto', label='Urn 2', alpha = .25)
 	sns.histplot(urn3_Black, element="step",fill = True, color = 'aqua', bins='auto', label='Urn 3')
 	plt.legend(loc='center')
-	plt.title(f'Black/total per urn for {len(urn1_Black)} trials per urn')	
+	plt.title(f'Black/total per urn for {len(urn1_Black)} trials per urn')  
 	plt.xlabel('Black/Total')
+	#plt.savefig(f'black_urns{trials}', dpi=700)
 	plt.show()
-	#plt.savefig('black_urns', dpi= 700)
 
