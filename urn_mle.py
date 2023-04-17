@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
 	# Urns generated with different ratios
 	InputFile = 'urn_data_mle_frac.csv'
-	haveUrns = True
+	haveUrns = False
 	if haveUrns == True:
 		with open(InputFile) as file:
 			means = pd.read_csv(file,usecols=[1,2,3])
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 	def bern(p, n):
 		x = bernoulli.rvs(p, size=n)
 		return x
-
+	# execution of function to draw the samples
 	urn_data = []
 	for urn in urns:
 		urn_test = []
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 		urn_data.append(urn_test)
 
 
-	#urns_dic = {'Urn 1': urn_data[0], 'Urn 2': urn_data[1], 'Urn 3': urn_data[2]}
+	# Writes the data to files, one file for each urn
 	
 	urn_1_dic = {f'Trial {i+1}': urn_data[0][i] for i in range(len(urn_data[0]))}
 	urn_1_df = pd.DataFrame(urn_1_dic)
@@ -92,3 +92,8 @@ if __name__ == "__main__":
 
 	for i in range(len(urn_array)):
 		urn_array[i].to_csv(f'urn_{i+1}_data_mle_{N_marbles_sample}.csv')
+	# Writes the true ps to a file if one does not exist
+	if haveUrns == False:
+		urns_frac_dic = {'Urn 1':urns[0], 'Urn 2':urns[1], 'Urn 3': urns[2]}
+		urns_frac_df = pd.DataFrame(urns_frac_dic)
+		urns_frac_df.to_csv('urn_data_mle_frac.csv')
