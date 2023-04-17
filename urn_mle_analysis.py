@@ -7,120 +7,193 @@ This script will determine the maximum likelihood estimate (MLE) for p = the pro
 then plot the empirical histogram and best fit, 
 """
 
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import pandas as pd
 import seaborn as sns
 import random
-import scipy.stats as st 
+
 
 if __name__ == "__main__":
 
-	if '-f1' in sys.argv:
-		p = sys.argv.index('-f1')
-		InputFile1 = sys.argv[p+1]
+
+	if '-h' in sys.argv or '--help' in sys.argv:
+		print ("Usage: %s [-t -n]" % sys.argv[0])
+		print
+		sys.exit(1)
+	if '-t' in sys.argv:
+		p = sys.argv.index('-t')
+		trials = int(sys.argv[p+1])
+	else:
+		trials = 100
+	if '-n' in sys.argv:
+		p = sys.argv.index('-n')
+		N_marbles_sample = int(sys.argv[p+1])
+	else:
+		N_marbles_sample = 100
 	
-	if '-f2' in sys.argv:
-		p = sys.argv.index('-f2')
-		InputFile2 = sys.argv[p+1]
+
+	np.random.seed(677)
+
+	#Number of urns
+	n_urns = 3
+	# Number of Marbles per urn
+	N_marbles_urn = 10000
+	# constructs an urn  passing the number of rolls and the probability. Here, the number of marbles is set to N = 100000
 	
-	with open(InputFile1) as file1, open(InputFile2) as file2:
-		table = pd.read_csv(file1)
-		means = pd.read_csv(file2)
-		#print(table.head())
-		print(means)
+	# alpha to generate dispersion of propbabilities
+	alpha = [1,1]
+
+	occurences_list = []
 	
+	# outcomes of each urn as strings
+	outcomes_list = []
+	
+	# outcomes of each urn as ints
+	outcomes_int = []
+	
+
+	# Urns generated with different ratios
+	InputFile = 'urn_data_mle_frac.csv'
+	haveUrns = True
+	if haveUrns == True:
+		with open(InputFile) as file:
+			means = pd.read_csv(file,usecols=[1,2,3])
+			#print(means)
+		means1 = means['Urn 1'].values.tolist()
+		means2 = means['Urn 2'].values.tolist()
+		means3 = means['Urn 3'].values.tolist()
+		urns = [means1, means2, means3]
+	else:
+		urns = np.random.dirichlet(alpha, n_urns)
+	
+	# Function that constructs an urn  passing the number of trials and probability array for the urn. 
+	def Category(trials, prob):
+		x = np.random.multinomial(trials, prob, 1)
+		return x
+
+
+
+	# function that takes the urns stored in outcomes_list and samples N_picks for N_Trials each
+	def color_samples(N_Trials, N_picks):
+		
+			
+
+		urn_samples = []
+		for urn in outcomes_list:
+			sublist = []
+			for _ in range(N_Trials):
+				urnH0_draws = random.sample(urn,N_picks)
+				sublist.append(urnH0_draws)
+			urn_samples.append(sublist)
+			
+		# store the draws as color data
+		urnh0_draws_colors = []
+		# converts the draws from urnH0_draws into colors
+		for urn in urn_samples:
+			colors = []
+			for trial in urn:
+				color = []
+				for i in range(len(trial)):
+					if trial[i] == '1':
+						color.append('White')
+					else:
+						color.append('Black')
+				colors.append(color)
+			urnh0_draws_colors.append(colors)
+		return urnh0_draws_colors
+
+	# function to obtain the ratios/numbers of white and black marbles per trial per urn
+	def counts(urn_samp):
+		white_urn_counts = []
+		black_urn_counts = [] 
+		for urn in urn_samp:
+			white_count = []
+			black_count = []
+			for trial in urn:
+				w_count = trial.count('White')
+				white_count.append(w_count)
+				b_count = trial.count('Black')
+				black_count.append(b_count)
+			white_urn_counts.append(white_count)
+			black_urn_counts.append(black_count)
+		return [white_urn_counts, black_urn_counts]
+
+	occurences_list = []
+	# outcomes of each urn as strings
+	outcomes_list = []
+	
+	# outcomes of each urn as ints
+	outcomes_int = []
+	
+	
+	print(urns)
+	# constructs an urn  passing the number of rolls and the probability. Here, the number of marbles is set to N = 100000
+	for urn in urns:
+		occurences = Category(N_marbles_urn, urn)[0]
+		occurences_list.append(occurences)
+	for urn in occurences_list:
+		outcome = []
+		for i in range(len(urn)):
+			outcome += str(i+1)*urn[i]
+			
+		outcomes_list.append(outcome)
+
+
+	#function call to begin sampling with 30 Trials and 1000 marbles per urn
+	urn_samp = color_samples(trials, N_marbles_sample)
+	
+	# function call to obtain the fractio of white marbles in the trials
+	urns_combined = counts(urn_samp)
+	white = urns_combined[0]
+	black = urns_combined[1]
+	
+
 	# Arrays that store the fractions of White marbles per trial for each urn to be plotted in histogram
-	urn1_White = table['Urn1W'] #/ (max(table['Urn1W']) + min(table['Urn1B']))
-	urn2_White = table['Urn2W'] #/ (max(table['Urn1W']) + min(table['Urn1B']))
-	urn3_White = table['Urn3W'] #/ (max(table['Urn1W']) + min(table['Urn1B']))
+	urn1_White = white[0]
+	urn2_White = white[1]
+	urn3_White = white[2]
 
-	urn1_Black = table['Urn1B'] #/ (max(table['Urn1W']) + min(table['Urn1B']))
-	urn2_Black = table['Urn2B'] #/ (max(table['Urn1W']) + min(table['Urn1B']))
-	urn3_Black = table['Urn3B'] #/ (max(table['Urn1W']) + min(table['Urn1B']))
+	urn1_Black = black[0]
+	urn2_Black = black[1]
+	urn3_Black = black[2]
 
-	delta = min(urn1_Black) + max(urn1_White)
-	# bounds is the number of observations per trial and the domain of the probability
-	bounds = [(0, np.mean(urn1_White) + .5 * np.mean(urn1_White)), (0, 1)]
+	# stores data in a dictionary and converts to a DataFrame to write to a .csv file
+	urns_dic = {'Urn1W': urn1_White, 
+		'Urn1B': urn1_Black, 
+		'Urn2W': urn2_White, 
+		'Urn2B': urn2_Black,
+		'Urn3W': urn3_White, 
+		'Urn3B': urn3_Black}
+	
+	urn_df = pd.DataFrame(urns_dic)
+	urn_df.to_csv(f'urn_data_mle_{trials}.csv')
+	if haveUrns == False:
+		urns_frac_dic = {'Urn 1':urns[0], 'Urn 2':urns[1], 'Urn 3': urns[2]}
+		urns_frac_df = pd.DataFrame(urns_frac_dic)
+		urns_frac_df.to_csv('urn_data_mle_frac.csv')
 
-	#distribution to fit to data
-	dist = st.binom
-
-	# function calls to minimize the binomial distribution and fit the data
-	res_urn1_white = st.fit(dist, urn1_White, bounds)
-	res_urn1_black = st.fit(dist, urn1_Black, bounds)
-
-	res_urn2_white = st.fit(dist, urn2_White, bounds)
-	res_urn2_black = st.fit(dist, urn2_Black, bounds)
-
-	res_urn3_white = st.fit(dist, urn3_White, bounds)
-	res_urn3_black = st.fit(dist, urn3_Black, bounds)
-
-	# Confidence intervals for each color in each urn
-	urn1_CI_White = st.binom.interval(confidence = .95, n=len(urn1_White), p = means['Urn 1'][0]) 
-	urn2_CI_White = st.binom.interval(confidence = .95, n=len(urn1_White), p = means['Urn 2'][0]) 
-	urn3_CI_White = st.binom.interval(confidence = .95, n=len(urn1_White), p = means['Urn 3'][0]) 
-
-	urn1_CI_Black = st.binom.interval(confidence = .95, n=len(urn1_White), p = means['Urn 1'][1]) 
-	urn2_CI_Black = st.binom.interval(confidence = .95, n=len(urn1_White), p = means['Urn 2'][1]) 
-	urn3_CI_Black = st.binom.interval(confidence = .95, n=len(urn1_White), p = means['Urn 3'][1]) 
-
-	#print(urn1_CI_White, urn1_CI_Black)
-	#print(urn2_CI_White, urn2_CI_Black)
-	#print(urn3_CI_White, urn3_CI_Black)
-
-	#print(res_urn1_white.params, res_urn1_black.params)
-	#print(res_urn2_white.params, res_urn2_black.params)
-	#print(res_urn3_white.params, res_urn3_black.params)
-
-
-
-
-	ax1 = res_urn1_white.plot()
-	ax1.legend([f'MLE: p = {round(res_urn1_white.params[1], 3)}', r'Data: $\frac{\sigma}{\sqrt{n}}$:' f'{round(np.std(urn1_White)/(len(urn1_White)*np.sqrt(len(urn1_White))), 5)}'])
-	#plt.xlabel('p')
-	plt.title(f'MLE of p for White Marbles in Urn 1 ({len(urn1_White)} draws)')
-	#plt.xlim(urn1_CI_White[0] -.2*urn1_CI_White[0] ,urn1_CI_White[1] +.2*urn1_CI_White[1])
-	plt.savefig(f'urn1_White{len(urn1_White)}')
+	# plots histograms for every urn. Uncomment plt.savefig() to save image
+	sns.histplot(urn1_White, element="step",fill = True, color = 'salmon', bins='auto', label='Urn 1')
+	sns.histplot(urn2_White, element="step",fill = True, color = 'violet', bins='auto', label='Urn 2', alpha = .25)
+	sns.histplot(urn3_White, element="step",fill = True, color = 'aqua', bins='auto', label='Urn 3')
+	plt.legend(loc='center')
+	plt.title(f'white/total per urn for {len(urn1_White)} trials per urn')  
+	plt.xlabel('White/Total')
+	#plt.savefig(f'white_urns{trials}', dpi= 700)
 	plt.show()
+	
 
-	ax2 = res_urn2_white.plot()
-	ax2.legend([f'MLE: p = {round(res_urn2_white.params[1], 3)}', r'Data: $\frac{\sigma}{\sqrt{n}}$:' f'{round(np.std(urn2_White)/(len(urn1_White)*np.sqrt(len(urn1_White))), 5)}'])
-	#plt.xlim(urn2_CI_White[0] -.2*urn2_CI_White[0] ,urn2_CI_White[1] +.2*urn2_CI_White[1])
-	plt.title(f'MLE of p for White Marbles in Urn 2 ({len(urn1_White)} draws)')
-	#plt.xlabel('p')
-	plt.savefig(f'urn2_White{len(urn1_White)}')
+	sns.histplot(urn1_Black, element="step",fill = True, color = 'salmon', bins='auto', label='Urn 1')
+	sns.histplot(urn2_Black, element="step",fill = True, color = 'violet', bins='auto', label='Urn 2', alpha = .25)
+	sns.histplot(urn3_Black, element="step",fill = True, color = 'aqua', bins='auto', label='Urn 3')
+	plt.legend(loc='center')
+	plt.title(f'Black/total per urn for {len(urn1_Black)} trials per urn')  
+	plt.xlabel('Black/Total')
+	#plt.savefig(f'black_urns{trials}', dpi=700)
 	plt.show()
+	
 
-	ax3 = res_urn3_white.plot()
-	ax3.legend([f'MLE: p = {round(res_urn3_white.params[1], 3)}', r'Data: $\frac{\sigma}{\sqrt{n}}$:' f'{round(np.std(urn3_White)/(len(urn1_White)*np.sqrt(len(urn1_White))), 5)}'])
-	#plt.xlabel('p')
-	plt.title(f'MLE of p for White Marbles in Urn 3 ({len(urn1_White)} draws)')
-	#plt.xlim(urn3_CI_White[0] -.2*urn3_CI_White[0] ,urn3_CI_White[1] +.2*urn3_CI_White[1])
-	plt.savefig(f'urn3_White{len(urn1_White)}')
-	plt.show()
 
-	ax4 = res_urn1_black.plot()
-	ax4.legend([f'MLE: p = {round(res_urn1_black.params[1], 3)}', r'Data: $\frac{\sigma}{\sqrt{n}}$:' f'{round(np.std(urn1_Black)/(len(urn1_White)*np.sqrt(len(urn1_White))), 5)}'])
-	#plt.xlabel('p')
-	plt.title(f'MLE of p for Black Marbles in Urn 1 ({len(urn1_White)} draws)')
-	#plt.xlim(urn1_CI_Black[0]-.2*urn1_CI_Black[0] ,urn1_CI_Black[1] +.2*urn1_CI_Black[1])
-	plt.savefig(f'urn1_Black{len(urn1_White)}')
-	plt.show()
-
-	ax5 = res_urn2_black.plot()
-	ax5.legend([f'MLE: p = {round(res_urn2_black.params[1], 3)}', r'Data: $\frac{\sigma}{\sqrt{n}}$:' f'{round(np.std(urn2_Black)/(len(urn1_White)*np.sqrt(len(urn1_White))), 5)}'])
-	#plt.xlabel('p')
-	plt.title(f'MLE of p for Black Marbles in Urn 2 ({len(urn1_White)} draws)')
-	#plt.xlim(urn2_CI_Black[0]-.2*urn2_CI_Black[0],urn2_CI_Black[1] +.2*urn2_CI_Black[1])
-	plt.savefig(f'urn2_Black{len(urn1_White)}')
-	plt.show()
-
-	ax6 = res_urn3_black.plot()
-	ax6.legend([f'MLE: p = {round(res_urn3_black.params[1], 3)}', r'Data: $\frac{\sigma}{\sqrt{n}}$:' f'{round(np.std(urn3_Black)/(len(urn1_White)*np.sqrt(len(urn1_White))),5)}'])
-	#plt.xlabel('p')
-	plt.title(f'MLE of p for Black Marbles in Urn 3 ({len(urn1_White)} draws)')
-	#plt.xlim(urn3_CI_Black[0]/2 ,urn3_CI_Black[1] +.2[1])
-	plt.savefig(f'urn3_Black{len(urn1_White)}')
-	plt.show()
