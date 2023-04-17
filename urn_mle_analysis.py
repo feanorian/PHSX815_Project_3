@@ -48,7 +48,6 @@ if __name__ == "__main__":
 	table_10000 = table_list[3]
 
 	# Generate some sample outcome
-	#outcome = table[f'Trial {urn}']
 	outcome = [table_10, table_100, table_1000, table_10000] 
 	# Define the likelihood function for a Bernoulli distribution
 	def likelihood(p, outcome):
@@ -97,6 +96,8 @@ if __name__ == "__main__":
 	box = pd.DataFrame(mle_array_tot)
 	box = box.T
 	box.rename(columns={0: "10", 1: "100", 2: "1000", 3 : "10000"}, inplace = True)
+	
+	# Plots the confidence interval
 	sns.pointplot(data=box[['10', '100', '1000', '10000']], join=False, ci=95)
 	#sns.boxplot(data=box[['10', '100', '1000', '10000']]) #draws boxplot instead
 	plt.xlabel('Number of draws')
