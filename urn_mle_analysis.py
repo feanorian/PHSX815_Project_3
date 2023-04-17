@@ -14,186 +14,95 @@ import csv
 import pandas as pd
 import seaborn as sns
 import random
+import scipy.stats as st 
+from scipy.stats import bernoulli
 
 
 if __name__ == "__main__":
 
-
-	if '-h' in sys.argv or '--help' in sys.argv:
-		print ("Usage: %s [-t -n]" % sys.argv[0])
-		print
-		sys.exit(1)
+	if '-f' in sys.argv:
+		p = sys.argv.index('-f')
+		InputFile = sys.argv[p+1]
 	if '-t' in sys.argv:
 		p = sys.argv.index('-t')
-		trials = int(sys.argv[p+1])
-	else:
-		trials = 100
-	if '-n' in sys.argv:
-		p = sys.argv.index('-n')
-		N_marbles_sample = int(sys.argv[p+1])
-	else:
-		N_marbles_sample = 100
-	
+		urn = sys.argv[p+1]
+	if '-u' in sys.argv:
+		p = sys.argv.index('-u')
+		urn_number = sys.argv[p+1]
 
-	np.random.seed(677)
+	InputFiles = InputFile.strip('][').split(', ')
 
-	#Number of urns
-	n_urns = 3
-	# Number of Marbles per urn
-	N_marbles_urn = 10000
-	# constructs an urn  passing the number of rolls and the probability. Here, the number of marbles is set to N = 100000
-	
-	# alpha to generate dispersion of propbabilities
-	alpha = [1,1]
-
-	occurences_list = []
-	
-	# outcomes of each urn as strings
-	outcomes_list = []
-	
-	# outcomes of each urn as ints
-	outcomes_int = []
-	
-
-	# Urns generated with different ratios
-	InputFile = 'urn_data_mle_frac.csv'
-	haveUrns = True
-	if haveUrns == True:
-		with open(InputFile) as file:
-			means = pd.read_csv(file,usecols=[1,2,3])
-			#print(means)
-		means1 = means['Urn 1'].values.tolist()
-		means2 = means['Urn 2'].values.tolist()
-		means3 = means['Urn 3'].values.tolist()
-		urns = [means1, means2, means3]
-	else:
-		urns = np.random.dirichlet(alpha, n_urns)
-	
-	# Function that constructs an urn  passing the number of trials and probability array for the urn. 
-	def Category(trials, prob):
-		x = np.random.multinomial(trials, prob, 1)
-		return x
-
-
-
-	# function that takes the urns stored in outcomes_list and samples N_picks for N_Trials each
-	def color_samples(N_Trials, N_picks):
+	# contains list of tables
+	table_list = []
+	for i in range(len(InputFiles)):
+		with open(InputFiles[i]) as file:
+			table = pd.read_csv(file)
+			table.drop(columns=table.columns[0], axis=1, inplace=True)
+			table_list.append(table)
+			#print(table.head())
 		
-			
 
-		urn_samples = []
-		for urn in outcomes_list:
-			sublist = []
-			for _ in range(N_Trials):
-				urnH0_draws = random.sample(urn,N_picks)
-				sublist.append(urnH0_draws)
-			urn_samples.append(sublist)
-			
-		# store the draws as color data
-		urnh0_draws_colors = []
-		# converts the draws from urnH0_draws into colors
-		for urn in urn_samples:
-			colors = []
-			for trial in urn:
-				color = []
-				for i in range(len(trial)):
-					if trial[i] == '1':
-						color.append('White')
-					else:
-						color.append('Black')
-				colors.append(color)
-			urnh0_draws_colors.append(colors)
-		return urnh0_draws_colors
+	table_10 = table_list[0]
+	table_100 = table_list[1]
+	table_1000 = table_list[2]
+	table_10000 = table_list[3]
 
-	# function to obtain the ratios/numbers of white and black marbles per trial per urn
-	def counts(urn_samp):
-		white_urn_counts = []
-		black_urn_counts = [] 
-		for urn in urn_samp:
-			white_count = []
-			black_count = []
-			for trial in urn:
-				w_count = trial.count('White')
-				white_count.append(w_count)
-				b_count = trial.count('Black')
-				black_count.append(b_count)
-			white_urn_counts.append(white_count)
-			black_urn_counts.append(black_count)
-		return [white_urn_counts, black_urn_counts]
+	# Generate some sample outcome
+	#outcome = table[f'Trial {urn}']
+	outcome = [table_10, table_100, table_1000, table_10000] 
+	# Define the likelihood function for a Bernoulli distribution
+	def likelihood(p, outcome):
+		return np.prod(bernoulli.pmf(outcome, p))
 
-	occurences_list = []
-	# outcomes of each urn as strings
-	outcomes_list = []
+	# Define a function to maximize the likelihood function
+	def maximum_likelihood_estimation(outcome):
+		# Initial guess for the probability parameter
+		p_init = np.mean(outcome)
+
+		# Use scipy.optimize.minimize to maximize the likelihood function
+		from scipy.optimize import minimize
+		result = minimize(lambda params: likelihood(params[0], outcome), [p_init], method='L-BFGS-B')
+		return result.x
+	mle_array_tot = []
+	for table in outcome:
+
+		mle_array = []
+		# Calculate the maximum likelihood estimate for the sample outcome
 	
-	# outcomes of each urn as ints
-	outcomes_int = []
+		for columns in table:
+			mle = maximum_likelihood_estimation(table[columns])
+			mle_array.append(mle[0])
+		mle_array_tot.append(mle_array)
+		print(f"Maximum likelihood estimate for p: {np.mean(mle_array)}")
 	
-	
-	print(urns)
-	# constructs an urn  passing the number of rolls and the probability. Here, the number of marbles is set to N = 100000
-	for urn in urns:
-		occurences = Category(N_marbles_urn, urn)[0]
-		occurences_list.append(occurences)
-	for urn in occurences_list:
-		outcome = []
-		for i in range(len(urn)):
-			outcome += str(i+1)*urn[i]
-			
-		outcomes_list.append(outcome)
+		x_95 = np.quantile(mle_array, [.05,.95])
+		uncert = round(np.std(mle_array)/np.sqrt(len(mle_array)), 4)
+		textstr = '\n'.join((
+			rf'.95 CL = {x_95}',
+			rf'$\sigma$ ={uncert}'))
 
+		# Plot the likelihood function
+		p_values = np.linspace(0, 1, 1000)
+		likelihood_values = [likelihood(p, table) for p in p_values]
+		plt.plot(p_values, np.log(likelihood_values))
+		plt.axvline(np.mean(mle_array), linestyle='--', color='red', label=f'MLE of p = {round(np.mean(mle_array),4)}')
+		plt.xlabel('p')
+		plt.ylabel('Log-Likelihood')
+		plt.annotate(textstr, xy=(0.2, 0.5), xycoords='axes fraction')
 
-	#function call to begin sampling with 30 Trials and 1000 marbles per urn
-	urn_samp = color_samples(trials, N_marbles_sample)
-	
-	# function call to obtain the fractio of white marbles in the trials
-	urns_combined = counts(urn_samp)
-	white = urns_combined[0]
-	black = urns_combined[1]
-	
+		plt.legend()
+		plt.savefig(f'mle_urn_{urn_number}_{len(table)}')
+		plt.show()
 
-	# Arrays that store the fractions of White marbles per trial for each urn to be plotted in histogram
-	urn1_White = white[0]
-	urn2_White = white[1]
-	urn3_White = white[2]
-
-	urn1_Black = black[0]
-	urn2_Black = black[1]
-	urn3_Black = black[2]
-
-	# stores data in a dictionary and converts to a DataFrame to write to a .csv file
-	urns_dic = {'Urn1W': urn1_White, 
-		'Urn1B': urn1_Black, 
-		'Urn2W': urn2_White, 
-		'Urn2B': urn2_Black,
-		'Urn3W': urn3_White, 
-		'Urn3B': urn3_Black}
-	
-	urn_df = pd.DataFrame(urns_dic)
-	urn_df.to_csv(f'urn_data_mle_{trials}.csv')
-	if haveUrns == False:
-		urns_frac_dic = {'Urn 1':urns[0], 'Urn 2':urns[1], 'Urn 3': urns[2]}
-		urns_frac_df = pd.DataFrame(urns_frac_dic)
-		urns_frac_df.to_csv('urn_data_mle_frac.csv')
-
-	# plots histograms for every urn. Uncomment plt.savefig() to save image
-	sns.histplot(urn1_White, element="step",fill = True, color = 'salmon', bins='auto', label='Urn 1')
-	sns.histplot(urn2_White, element="step",fill = True, color = 'violet', bins='auto', label='Urn 2', alpha = .25)
-	sns.histplot(urn3_White, element="step",fill = True, color = 'aqua', bins='auto', label='Urn 3')
-	plt.legend(loc='center')
-	plt.title(f'white/total per urn for {len(urn1_White)} trials per urn')  
-	plt.xlabel('White/Total')
-	#plt.savefig(f'white_urns{trials}', dpi= 700)
+	box = pd.DataFrame(mle_array_tot)
+	box = box.T
+	box.rename(columns={0: "10", 1: "100", 2: "1000", 3 : "10000"}, inplace = True)
+	sns.pointplot(data=box[['10', '100', '1000', '10000']], join=False, ci=95)
+	#sns.boxplot(data=box[['10', '100', '1000', '10000']]) #draws boxplot instead
+	plt.xlabel('Number of draws')
+	plt.ylabel('range of p')
+	plt.title(f'95 % C.L. of estimates for p for draw counts')
+	#plt.savefig(f'CL_95_Urn_{urn_number}')
 	plt.show()
-	
-
-	sns.histplot(urn1_Black, element="step",fill = True, color = 'salmon', bins='auto', label='Urn 1')
-	sns.histplot(urn2_Black, element="step",fill = True, color = 'violet', bins='auto', label='Urn 2', alpha = .25)
-	sns.histplot(urn3_Black, element="step",fill = True, color = 'aqua', bins='auto', label='Urn 3')
-	plt.legend(loc='center')
-	plt.title(f'Black/total per urn for {len(urn1_Black)} trials per urn')  
-	plt.xlabel('Black/Total')
-	#plt.savefig(f'black_urns{trials}', dpi=700)
-	plt.show()
-	
 
 
