@@ -17,6 +17,7 @@ import seaborn as sns
 import random
 from scipy.stats import bernoulli
 
+
 if __name__ == "__main__":
 
 
@@ -84,28 +85,10 @@ if __name__ == "__main__":
 	urn_2_dic = {f'Trial {i+1}': urn_data[1][i] for i in range(len(urn_data[1]))}
 	urn_2_df = pd.DataFrame(urn_2_dic)
 
-	urn_3_dic = {f'Trial {i+1}': urn_data[1][i] for i in range(len(urn_data[2]))}
+	urn_3_dic = {f'Trial {i+1}': urn_data[2][i] for i in range(len(urn_data[2]))}
 	urn_3_df = pd.DataFrame(urn_3_dic)
 
 	urn_array = [urn_1_df, urn_2_df, urn_3_df]
 
 	for i in range(len(urn_array)):
 		urn_array[i].to_csv(f'urn_{i+1}_data_mle_{N_marbles_sample}.csv')
-'''
-	urn_df = pd.DataFrame(urns_dic)
-	urn_df.to_csv(f'urn_data_mle_{N_marbles_sample}.csv')
-	if haveUrns == False:
-		urns_frac_dic = {'Urn 1':urns[0], 'Urn 2':urns[1], 'Urn 3': urns[2]}
-		urns_frac_df = pd.DataFrame(urns_frac_dic)
-		urns_frac_df.to_csv('urn_data_mle_frac.csv')
-	
-
-	sns.histplot(urn1_Black, element="step",fill = True, color = 'salmon', bins='auto', label='Urn 1')
-	sns.histplot(urn2_Black, element="step",fill = True, color = 'violet', bins='auto', label='Urn 2', alpha = .25)
-	sns.histplot(urn3_Black, element="step",fill = True, color = 'aqua', bins='auto', label='Urn 3')
-	plt.legend(loc='center')
-	plt.title(f'Black/total per urn for {len(urn1_Black)} trials per urn')  
-	plt.xlabel('Black/Total')
-	#plt.savefig(f'black_urns{trials}', dpi=700)
-	plt.show()
-
