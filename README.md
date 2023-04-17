@@ -1,7 +1,8 @@
 # PHSX815_Project_3
 This repository will be where Project 3 from PHSX815 Spring 2023 wiill be found
 
-![urns](https://user-images.githubusercontent.com/12628872/229614109-b3ea3809-0890-4139-af9f-e6039d1cd6c8.png)
+
+![white_urns1000](https://user-images.githubusercontent.com/12628872/232625012-2f82246b-9672-482a-b75a-d57bb8acc273.png)
 
 ## urn_mle.py
 A script to construct the samples of urns for each urn distribution
@@ -15,6 +16,9 @@ A script to construct the samples of urns for each urn distribution
 
 ## urn_mle_analysis.py
 A script that reads in data generated from `urn_mle.py`
+![mle_urn_1_100](https://user-images.githubusercontent.com/12628872/232625110-80ebdddd-9fd2-4b30-b2d7-30cee7608720.png)
+
+![CL_95_Urn_1](https://user-images.githubusercontent.com/12628872/232625205-0dcf2fb0-9fab-4b5d-a00c-fec61ca107f3.png)
 
 ### Usage
 `python3 urn_mle_analysis.py -f1 filename1 -f2 filename2`
